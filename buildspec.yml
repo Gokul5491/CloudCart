@@ -4,12 +4,13 @@ phases:
   build:
     commands:
       - echo "Preparing Lambda deployment packages..."
+
       - cd backend/get-products
-      - zip -r ../../get-products.zip .
+      - zip -r ../../get-products.zip lambda_function.py
       - cd ../create-order
-      - zip -r ../../create-order.zip .
+      - zip -r ../../create-order.zip lambda_function.py
       - cd ../order-processor
-      - zip -r ../../order-processor.zip .
+      - zip -r ../../order-processor.zip lambda_function.py
 
 artifacts:
   files:
