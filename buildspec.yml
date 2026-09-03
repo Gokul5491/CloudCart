@@ -4,7 +4,6 @@ phases:
   build:
     commands:
       - echo "Preparing Lambda deployment packages..."
-
       - cd backend/get-products
       - zip -r ../../get-products.zip .
       - cd ../create-order
@@ -15,10 +14,16 @@ phases:
 artifacts:
   files:
     - get-products.zip
+
   secondary-artifacts:
+    BuildGetProducts:
+      files:
+        - get-products.zip
+
     BuildCreateOrder:
       files:
         - create-order.zip
+
     BuildOrderProcessor:
       files:
         - order-processor.zip
