@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudCart</title>
+<style>
+  :root{
+    --bg:#0f1220;
+    --bg-alt:#161a2e;
+    --card:#1b2038;
+    --accent:#6c8cff;
+    --accent2:#00d9c0;
+    --text:#eef0fa;
+    --muted:#9aa0c0;
+    --danger:#ff6b6b;
+    --radius:16px;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+    background:radial-gradient(circle at top left, var(--bg-alt), var(--bg) 60%);
+    color:var(--text);
+    min-height:100vh;
+  }
+
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:20px 5%;
+    position:sticky;
+    top:0;
+    background:rgba(15,18,32,0.85);
+    backdrop-filter:blur(10px);
+    z-index:100;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+  }
+  header h1{
+    margin:0;
+    font-size:1.6rem;
+    background:linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  #cart-btn{
+    position:relative;
+    background:var(--card);
+    color:var(--text);
+    border:1px solid rgba(255,255,255,0.1);
+    padding:10px 18px;
+    border-radius:999px;
+    cursor:pointer;
+    font-size:1rem;
+    transition:transform .2s, background .2s;
+  }
+  #cart-btn:hover{ transform:translateY(-2px); background:#232a4d; }
+  #cart-count{
+    position:absolute;
+    top:-6px; right:-6px;
+    background:var(--accent2);
+    color:#03251f;
+    font-weight:700;
+    font-size:0.75rem;
+    width:22px; height:22px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  .hero{
+    text-align:center;
+    padding:60px 20px 40px;
+  }
+  .hero h2{ font-size:2.2rem; margin-bottom:8px; }
+  .hero p{ color:var(--muted); font-size:1.05rem; }
+
+  .filters{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin:20px 0 40px;
+    padding:0 20px;
+  }
+  .filter-btn{
+    background:var(--card);
+    color:var(--muted);
+    border:1px solid rgba(255,255,255,0.08);
+    padding:8px 18px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:all .2s;
+    font-size:0.9rem;
+  }
+  .filter-btn:hover{ color:var(--text); }
+  .filter-btn.active{
+    background:linear-gradient(90deg, var(--accent), var(--accent2));
+    color:#0b0d1a;
+    font-weight:600;
+    border-color:transparent;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
+    gap:24px;
+    padding:0 6% 80px;
+    max-width:1200px;
+    margin:0 auto;
+  }
+
+  .product{
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:24px;
+    text-align:center;
+    border:1px solid rgba(255,255,255,0.06);
+    transition:transform .25s ease, box-shadow .25s ease;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .product:hover{
+    transform:translateY(-6px);
+    box-shadow:0 12px 30px rgba(108,140,255,0.25);
+  }
+  .product .icon{ font-size:3rem; }
+  .product h4{ margin:0; font-size:1.1rem; }
+  .product .category{
+    font-size:0.75rem;
+    color:var(--accent2);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+  }
+  .product .price{
+    font-size:1.3rem;
+    font-weight:700;
+    color:var(--text);
+    margin:6px 0;
+  }
+  .stars{ color:#ffcc55; font-size:0.9rem; }
+
+  .add-btn{
+    margin-top:auto;
+    background:linear-gradient(90deg, var(--accent), var(--accent2));
+    color:#0b0d1a;
+    border:none;
+    padding:10px 16px;
+    border-radius:10px;
+    font-weight:700;
+    cursor:pointer;
+    transition:filter .2s, transform .15s;
+  }
+  .add-btn:hover{ filter:brightness(1.1); }
+  .add-btn:active{ transform:scale(0.96); }
+  .add-btn.added{ background:var(--accent2); }
+
+
+  /* Cognito authentication */
+  #auth-area{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-left:auto;
+    margin-right:12px;
+  }
+  #login-btn, #logout-btn{
+    background:linear-gradient(90deg, var(--accent), var(--accent2));
+    color:#0b0d1a;
+    border:none;
+    padding:10px 16px;
+    border-radius:999px;
+    font-weight:700;
+    cursor:pointer;
+    transition:transform .2s, filter .2s;
+  }
+  #login-btn:hover, #logout-btn:hover{
+    transform:translateY(-2px);
+    filter:brightness(1.08);
+  }
+  #user-name{
+    color:var(--muted);
+    font-size:.9rem;
+  }
+
+  /* Cart drawer */
+  #overlay{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.5);
+    opacity:0; pointer-events:none;
+    transition:opacity .3s;
+    z-index:200;
+  }
+  #overlay.show{ opacity:1; pointer-events:auto; }
+
+  #cart-drawer{
+    position:fixed;
+    top:0; right:-380px;
+    width:340px; max-width:90vw;
+    height:100%;
+    background:var(--bg-alt);
+    box-shadow:-10px 0 30px rgba(0,0,0,0.4);
+    transition:right .35s ease;
+    z-index:201;
+    display:flex;
+    flex-direction:column;
+    padding:24px;
+  }
+  #cart-drawer.open{ right:0; }
+  #cart-drawer h3{ margin-top:0; }
+  #cart-items{ flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:14px; margin:16px 0; }
+  .cart-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:var(--card);
+    padding:10px 12px;
+    border-radius:10px;
+  }
+  .cart-item .info{ display:flex; flex-direction:column; }
+  .cart-item .info span{ font-size:0.85rem; color:var(--muted); }
+  .qty-controls{ display:flex; align-items:center; gap:8px; }
+  .qty-controls button{
+    background:rgba(255,255,255,0.08);
+    border:none;
+    color:var(--text);
+    width:24px; height:24px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .remove-btn{
+    background:none; border:none; color:var(--danger);
+    cursor:pointer; font-size:1.1rem;
+  }
+  .empty-msg{ color:var(--muted); text-align:center; margin-top:40px; }
+
+  #cart-total{
+    border-top:1px solid rgba(255,255,255,0.08);
+    padding-top:14px;
+    display:flex;
+    justify-content:space-between;
+    font-size:1.1rem;
+    font-weight:700;
+  }
+  #close-cart{
+    align-self:flex-end;
+    background:none; border:none;
+    color:var(--muted); font-size:1.4rem;
+    cursor:pointer;
+  }
+  #checkout-btn{
+    margin-top:14px;
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    background:linear-gradient(90deg, var(--accent), var(--accent2));
+    color:#0b0d1a;
+    font-weight:700;
+    cursor:pointer;
+  }
+
+  #toast{
+    position:fixed;
+    bottom:24px; left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--card);
+    border:1px solid var(--accent2);
+    color:var(--text);
+    padding:12px 22px;
+    border-radius:999px;
+    opacity:0;
+    transition:all .3s;
+    z-index:300;
+    pointer-events:none;
+  }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  footer{
+    text-align:center;
+    color:var(--muted);
+    padding:20px;
+    font-size:0.85rem;
+    border-top:1px solid rgba(255,255,255,0.06);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🛒 CloudCart</h1>
+
+  <div id="auth-area">
+    <span id="user-name"></span>
+    <button id="login-btn" onclick="login()">🔐 Login</button>
+    <button id="logout-btn" onclick="logout()" style="display:none;">Logout</button>
+  </div>
+
+  <button id="cart-btn" onclick="toggleCart(true)">
+    🛍️ Cart <span id="cart-count">0</span>
+  </button>
+</header>
+
+<section class="hero">
+  <h2>Welcome to CloudCart</h2>
+  <p>Your cloud-powered shopping platform.</p>
+</section>
+
+<div class="filters" id="filters"></div>
+<div class="grid" id="product-grid"></div>
+
+<div id="overlay" onclick="toggleCart(false)"></div>
+<aside id="cart-drawer">
+  <button id="close-cart" onclick="toggleCart(false)">✕</button>
+  <h3>Your Cart</h3>
+  <div id="cart-items"></div>
+  <div id="cart-total"><span>Total</span><span id="total-amount">₹0</span></div>
+  <button id="checkout-btn" onclick="checkout()">Checkout</button>
+</aside>
+
+<div id="toast"></div>
+
+<footer>Premium tech tools engineered to elevate your daily productivity.</footer>
+
+<script>
+let products = [];
+
+const API_URL = "https://gvgxrhkqa6.execute-api.ap-south-1.amazonaws.com/products";
+
+async function loadProducts() {
+  try {
+    const token = sessionStorage.getItem("cloudcart_access_token");
+
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+
+    const response = await fetch(API_URL, {
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    products = data.products.map(p => ({
+      id: p.productId,
+      name: p.name,
+      icon: getProductIcon(p.category),
+      price: p.price,
+      category: p.category,
+      rating: p.rating
+    }));
+
+    renderFilters();
+    renderProducts(products);
+    updateCartUI();
+
+  } catch (error) {
+    console.error("Failed to load products:", error);
+    document.getElementById("product-grid").innerHTML =
+      "<p>Unable to load products. Please try again.</p>";
+  }
+}
+
+function getProductIcon(category) {
+  const icons = {
+    Computers: "💻",
+    Audio: "🎧",
+    Accessories: "⌨️",
+    Wearables: "⌚",
+    Mobiles: "📱",
+    Storage: "💾",
+    Furniture: "🪑",
+    Networking: "📡"
+  };
+
+  return icons[category] || "🛍️";
+}
+
+
+/* =========================
+   AMAZON COGNITO
+   =========================
+   IMPORTANT:
+   Replace COGNITO_DOMAIN with the Managed Login domain shown in
+   Cognito -> User pool -> App client -> Login pages.
+
+   Example format:
+   https://your-domain.auth.ap-south-2.amazoncognito.com
+*/
+
+const COGNITO_DOMAIN = "https://ap-south-2krthsao1g.auth.ap-south-2.amazoncognito.com";
+const COGNITO_CLIENT_ID = "3920gvkd07iouqvven5b32u442";
+const COGNITO_REDIRECT_URI = window.location.origin + "/";
+
+const COGNITO_SCOPE = "openid email phone";
+
+function base64UrlEncode(bytes) {
+  let binary = "";
+  bytes.forEach(b => binary += String.fromCharCode(b));
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+function randomString(length = 64) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => chars[b % chars.length]).join("");
+}
+
+async function sha256(value) {
+  return await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+}
+
+async function createCodeChallenge(verifier) {
+  return base64UrlEncode(new Uint8Array(await sha256(verifier)));
+}
+
+async function login() {
+  if (COGNITO_DOMAIN.includes("PASTE_YOUR")) {
+    showToast("Add your Cognito Managed Login domain first.");
+    return;
+  }
+
+  const verifier = randomString();
+  const challenge = await createCodeChallenge(verifier);
+
+  sessionStorage.setItem("cloudcart_pkce_verifier", verifier);
+
+  const params = new URLSearchParams({
+    client_id: COGNITO_CLIENT_ID,
+    response_type: "code",
+    scope: COGNITO_SCOPE,
+    redirect_uri: COGNITO_REDIRECT_URI,
+    code_challenge_method: "S256",
+    code_challenge: challenge
+  });
+
+  window.location.href = `${COGNITO_DOMAIN}/oauth2/authorize?${params.toString()}`;
+}
+
+async function handleCognitoCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+
+  if (!code) return;
+
+  const verifier = sessionStorage.getItem("cloudcart_pkce_verifier");
+  if (!verifier) {
+    showToast("Login session expired. Please try again.");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: COGNITO_CLIENT_ID,
+        code,
+        redirect_uri: COGNITO_REDIRECT_URI,
+        code_verifier: verifier
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Token exchange failed: ${response.status}`);
+    }
+
+    const tokens = await response.json();
+
+    sessionStorage.setItem("cloudcart_id_token", tokens.id_token || "");
+    sessionStorage.setItem("cloudcart_access_token", tokens.access_token || "");
+    sessionStorage.removeItem("cloudcart_pkce_verifier");
+
+    window.history.replaceState({}, document.title, window.location.pathname);
+    updateAuthUI();
+    showToast("Login successful! 🎉");
+  } catch (error) {
+    console.error("Cognito login error:", error);
+    showToast("Login failed. Please try again.");
+  }
+}
+
+function parseJwt(token) {
+  try {
+    const payload = token.split(".")[1];
+    const decoded = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(decodeURIComponent(
+      Array.from(decoded, c =>
+        "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)
+      ).join("")
+    ));
+  } catch {
+    return null;
+  }
+}
+
+function updateAuthUI() {
+  const token = sessionStorage.getItem("cloudcart_id_token");
+  const loginBtn = document.getElementById("login-btn");
+  const logoutBtn = document.getElementById("logout-btn");
+  const userName = document.getElementById("user-name");
+
+  if (!token) {
+    loginBtn.style.display = "inline-block";
+    logoutBtn.style.display = "none";
+    userName.textContent = "";
+    return;
+  }
+
+  const payload = parseJwt(token);
+  const displayName = payload?.email || payload?.username || "User";
+
+  userName.textContent = `Hi, ${displayName}`;
+  loginBtn.style.display = "none";
+  logoutBtn.style.display = "inline-block";
+}
+
+function logout() {
+  sessionStorage.removeItem("cloudcart_id_token");
+  sessionStorage.removeItem("cloudcart_access_token");
+  sessionStorage.removeItem("cloudcart_pkce_verifier");
+
+  if (!COGNITO_DOMAIN.includes("PASTE_YOUR")) {
+    const params = new URLSearchParams({
+      client_id: COGNITO_CLIENT_ID,
+      logout_uri: COGNITO_REDIRECT_URI
+    });
+    window.location.href = `${COGNITO_DOMAIN}/logout?${params.toString()}`;
+  } else {
+    updateAuthUI();
+    showToast("Logged out.");
+  }
+}
+
+let cart = {}; // id -> qty
+
+function formatPrice(n){ return "₹" + n.toLocaleString("en-IN"); }
+
+function renderFilters(){
+  const cats = ["All", ...new Set(products.map(p=>p.category))];
+  const filtersEl = document.getElementById("filters");
+  filtersEl.innerHTML = cats.map((c,i) =>
+    `<button class="filter-btn ${i===0?'active':''}" data-cat="${c}" onclick="filterProducts('${c}', this)">${c}</button>`
+  ).join("");
+}
+
+function renderProducts(list){
+  const grid = document.getElementById("product-grid");
+  grid.innerHTML = list.map(p => `
+    <div class="product">
+      <div class="category">${p.category}</div>
+      <div class="icon">${p.icon}</div>
+      <h4>${p.name}</h4>
+      <div class="stars">${"⭐".repeat(p.rating)}${"☆".repeat(5-p.rating)}</div>
+      <div class="price">${formatPrice(p.price)}</div>
+      <button class="add-btn" id="btn-${p.id}" onclick="addToCart(${p.id}, this)">Add to Cart</button>
+    </div>
+  `).join("");
+}
+
+function filterProducts(cat, btn){
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  const list = cat === "All" ? products : products.filter(p => p.category === cat);
+  renderProducts(list);
+}
+
+function addToCart(id, btnEl){
+  cart[id] = (cart[id] || 0) + 1;
+  updateCartUI();
+  showToast(products.find(p=>p.id===id).name + " added to cart");
+  if(btnEl){
+    btnEl.textContent = "Added ✓";
+    btnEl.classList.add("added");
+    setTimeout(()=>{ btnEl.textContent = "Add to Cart"; btnEl.classList.remove("added"); }, 900);
+  }
+}
+
+function changeQty(id, delta){
+  cart[id] = (cart[id] || 0) + delta;
+  if(cart[id] <= 0) delete cart[id];
+  updateCartUI();
+}
+
+function removeFromCart(id){
+  delete cart[id];
+  updateCartUI();
+}
+
+function updateCartUI(){
+  const count = Object.values(cart).reduce((a,b)=>a+b, 0);
+  document.getElementById("cart-count").textContent = count;
+
+  const itemsEl = document.getElementById("cart-items");
+  const ids = Object.keys(cart);
+  if(ids.length === 0){
+    itemsEl.innerHTML = `<p class="empty-msg">Your cart is empty 🛒</p>`;
+  } else {
+    itemsEl.innerHTML = ids.map(id => {
+      const p = products.find(pr => pr.id == id);
+      const qty = cart[id];
+      return `
+        <div class="cart-item">
+          <div class="info">
+            <strong>${p.icon} ${p.name}</strong>
+            <span>${formatPrice(p.price)} × ${qty}</span>
+          </div>
+          <div class="qty-controls">
+            <button onclick="changeQty(${p.id}, -1)">−</button>
+            <span>${qty}</span>
+            <button onclick="changeQty(${p.id}, 1)">+</button>
+            <button class="remove-btn" onclick="removeFromCart(${p.id})">🗑️</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  const total = ids.reduce((sum, id) => sum + products.find(p=>p.id==id).price * cart[id], 0);
+  document.getElementById("total-amount").textContent = formatPrice(total);
+}
+
+function toggleCart(open){
+  document.getElementById("cart-drawer").classList.toggle("open", open);
+  document.getElementById("overlay").classList.toggle("show", open);
+}
+
+async function checkout() {
+  const count = Object.values(cart).reduce((a, b) => a + b, 0);
+
+  if (count === 0) {
+    showToast("Your cart is empty!");
+    return;
+  }
+
+  try {
+    // Get Cognito access token
+    const token = sessionStorage.getItem("cloudcart_access_token");
+
+    if (!token) {
+      showToast("Please login first!");
+      return;
+    }
+
+    // Get logged-in user's email from Cognito ID token
+    const idToken = sessionStorage.getItem("cloudcart_id_token");
+
+    if (!idToken) {
+      showToast("Login session expired!");
+      return;
+    }
+
+    const payload = JSON.parse(
+      atob(idToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
+    );
+
+    const customer = payload.email;
+
+    // Calculate cart total
+    const ids = Object.keys(cart);
+    const total = ids.reduce(
+      (sum, id) =>
+        sum + products.find(p => p.id == id).price * cart[id],
+      0
+    );
+
+    // Send order to API Gateway
+    const response = await fetch(
+      "https://gvgxrhkqa6.execute-api.ap-south-1.amazonaws.com/orders",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          customer: customer,
+          total: total
+        })
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Order API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    console.log("ORDER SUCCESS:", data);
+
+    showToast("Order placed successfully! 🎉");
+
+    cart = {};
+    updateCartUI();
+
+    setTimeout(() => toggleCart(false), 800);
+
+  } catch (error) {
+    console.error("Order failed:", error);
+    showToast("Order failed. Please try again.");
+  }
+}
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove("show"), 2000);
+}
+
+(async function initCloudCart() {
+  await handleCognitoCallback();
+  updateAuthUI();
+  await loadProducts();
+})();
+</script>
+
+</body>
+</html>
