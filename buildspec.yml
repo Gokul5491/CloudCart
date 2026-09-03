@@ -1,0 +1,18 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+      - echo "Preparing Lambda deployment packages..."
+      - cd backend/get-products
+      - zip -r ../../get-products.zip .
+      - cd ../create-order
+      - zip -r ../../create-order.zip .
+      - cd ../order-processor
+      - zip -r ../../order-processor.zip .
+
+artifacts:
+  files:
+    - get-products.zip
+    - create-order.zip
+    - order-processor.zip
