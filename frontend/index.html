@@ -330,17 +330,7 @@ const API_URL = "https://gvgxrhkqa6.execute-api.ap-south-1.amazonaws.com/product
 
 async function loadProducts() {
   try {
-    const token = sessionStorage.getItem("cloudcart_access_token");
-
-    if (!token) {
-      throw new Error("Not authenticated");
-    }
-
-    const response = await fetch(API_URL, {
-      headers: {
-        "Authorization": `Bearer ${token}`
-      }
-    });
+    const response = await fetch(API_URL);
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
